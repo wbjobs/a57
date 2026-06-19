@@ -21,21 +21,72 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/api/health', (req, res) => {
+  const stats = aggregationEngine.getRealtimeStats();
   res.json({
     status: 'ok',
     topic: config.topic,
+    topics: aggregationEngine.getAvailableTopics(),
     elasticsearchConnected: es.isReady(),
-    totalPosts: aggregationEngine.getRealtimeStats().totalCount,
+    totalPosts: stats.totalCount,
     simulation: {
       running: mockDataStream.isRunning,
       postsPerSecond: mockDataStream.postsPerSecond,
+      activeTopics: mockDataStream.activeTopics,
     },
   });
 });
 
+app.get('/api/topics', (req, res) => {
+  res.json({
+    available: mockDataStream.getAvailableTopics(),
+    active: aggregationEngine.getAvailableTopics(),
+  });
+});
+
 app.get('/api/stats/realtime', (req, res) => {
-  const stats = aggregationEngine.getRealtimeStats();
+  const { topic } = req.query;
+  const stats = aggregationEngine.getRealtimeStats(topic);
   res.json(stats);
+});
+
+app.get('/api/stats/all', (req, res) => {
+  const allStats = aggregationEngine.getAllStats();
+  res.json(allStats);
+});
+
+app.get('/api/prediction', (req, res) => {
+  const { topic } = req.query;
+  const prediction = aggregationEngine.getPrediction(topic);
+  res.json(prediction || {});
+});
+
+app.get('/api/compare', (req, res) => {
+  const { topic1, topic2 } = req.query;
+  if (!topic1 || !topic2) {
+    return res.status(400).json({ error: 'topic1 and topic2 are required' });
+  }
+  const result = aggregationEngine.compareTopics(topic1, topic2);
+  res.json(result);
+});
+
+app.post('/api/simulation/topics', (req, res) => {
+  const { topics } = req.body;
+  if (topics && Array.isArray(topics) && topics.length > 0) {
+    mockDataStream.setActiveTopics(topics);
+    res.json({ status: 'updated', topics });
+  } else {
+    res.status(400).json({ error: 'Invalid topics array' });
+  }
+});
+
+app.post('/api/simulation/topic-weight', (req, res) => {
+  const { topic, weight } = req.body;
+  if (topic && weight !== undefined && weight > 0) {
+    mockDataStream.setTopicWeight(topic, weight);
+    res.json({ status: 'updated', topic, weight });
+  } else {
+    res.status(400).json({ error: 'Invalid topic or weight' });
+  }
 });
 
 app.get('/api/stats/historical', async (req, res) => {
@@ -85,9 +136,10 @@ app.post('/api/simulation/rate', (req, res) => {
 });
 
 app.post('/api/simulation/burst', (req, res) => {
-  const { count } = req.body;
-  mockDataStream.generateBurst(count || 50);
-  res.json({ status: 'burst generated', count: count || 50 });
+  const { count, topic } = req.body;
+  const burstCount = count || 50;
+  mockDataStream.generateBurst(burstCount, topic);
+  res.json({ status: 'burst generated', count: burstCount, topic: topic || config.topic });
 });
 
 io.on('connection', (socket) => {
@@ -137,13 +189,19 @@ async function start() {
     console.log(`[WebSocket] Socket.IO 运行在 ws://localhost:${config.port}`);
     console.log(`[追踪话题] ${config.topic}`);
     console.log(`\nAPI 端点:`);
-    console.log(`  GET  /api/health          - 健康检查`);
-    console.log(`  GET  /api/stats/realtime  - 实时统计数据`);
+    console.log(`  GET  /api/health           - 健康检查`);
+    console.log(`  GET  /api/topics           - 话题列表`);
+    console.log(`  GET  /api/stats/realtime   - 实时统计数据`);
+    console.log(`  GET  /api/stats/all        - 所有话题统计`);
     console.log(`  GET  /api/stats/historical - 历史统计数据`);
-    console.log(`  GET  /api/posts/recent    - 最近帖子`);
+    console.log(`  GET  /api/posts/recent     - 最近帖子`);
+    console.log(`  GET  /api/prediction       - 热度预测`);
+    console.log(`  GET  /api/compare          - 话题对比`);
+    console.log(`  GET  /api/performance      - 性能指标`);
     console.log(`  POST /api/simulation/start - 启动模拟`);
     console.log(`  POST /api/simulation/stop  - 停止模拟`);
     console.log(`  POST /api/simulation/burst - 生成突发流量`);
+    console.log(`  POST /api/simulation/topics - 设置追踪话题`);
   });
 }
 

@@ -2,7 +2,22 @@ import React, { useEffect, useRef } from 'react';
 import * as echarts from 'echarts';
 import 'echarts-wordcloud';
 
-function WordCloudChart({ data, topN = 50, shape = 'circle' }) {
+const colorSchemes = [
+  [
+    '#60a5fa', '#818cf8', '#a78bfa', '#c084fc', '#e879f9',
+    '#f472b6', '#fb7185', '#f97316', '#fbbf24', '#34d399',
+    '#22d3ee', '#38bdf8', '#6366f1', '#ec4899', '#f59e0b',
+    '#a3e635', '#34d399', '#2dd4bf', '#22d3ee', '#38bdf8',
+  ],
+  [
+    '#ff6b6b', '#ee5a24', '#f368e0', '#ff9ff3', '#feca57',
+    '#ff9f43', '#ff6b6b', '#ee5a24', '#ff6348', '#ffa502',
+    '#ff4757', '#ff6348', '#ffa502', '#ff7f50', '#ff6b81',
+    '#fc5c65', '#fd9644', '#fed330', '#f7b731', '#fa8231',
+  ],
+];
+
+function WordCloudChart({ data, topN = 50, shape = 'circle', colorScheme = 0 }) {
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
 
@@ -30,12 +45,7 @@ function WordCloudChart({ data, topN = 50, shape = 'circle' }) {
       value: item.count || item.score || 10,
     }));
 
-    const colors = [
-      '#60a5fa', '#818cf8', '#a78bfa', '#c084fc', '#e879f9',
-      '#f472b6', '#fb7185', '#f97316', '#fbbf24', '#34d399',
-      '#22d3ee', '#38bdf8', '#6366f1', '#ec4899', '#f59e0b',
-      '#a3e635', '#34d399', '#2dd4bf', '#22d3ee', '#38bdf8',
-    ];
+    const colors = colorSchemes[colorScheme] || colorSchemes[0];
 
     const option = {
       backgroundColor: 'transparent',
@@ -88,7 +98,7 @@ function WordCloudChart({ data, topN = 50, shape = 'circle' }) {
     };
 
     chartInstance.current.setOption(option, true);
-  }, [data, topN, shape]);
+  }, [data, topN, shape, colorScheme]);
 
   return <div ref={chartRef} className="chart-container" />;
 }

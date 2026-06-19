@@ -10,40 +10,77 @@ const authors = [
   '机器人工程师', '自动驾驶爱好者', '量化分析师', '云计算专家',
 ];
 
-const contentTemplates = [
-  '今天尝试了一下{topic}，真的太神奇了！{tag}',
-  '{topic}正在改变我们的生活方式，未来已来！{tag}',
-  '关于{topic}的几点思考，欢迎大家讨论 {tag}',
-  '刚刚发布了关于{topic}的最新研究成果 {tag}',
-  '{topic}行业周报：本周大事记 {tag}',
-  '入门{topic}看这篇就够了 {tag}',
-  '深度解析：{topic}的核心技术原理 {tag}',
-  '用{topic}做了一个小项目，效果出乎意料 {tag}',
-  '{topic}面试常考题汇总，收藏备用 {tag}',
-  '我为什么看好{topic}的发展前景 {tag}',
-  '手把手教你用{topic}实现XXX功能 {tag}',
-  '{topic}实战经验分享，避坑指南 {tag}',
-  '2024年{topic}发展趋势预测 {tag}',
-  '{topic}工具推荐，提升效率必备 {tag}',
-  '从0到1学习{topic}，我的学习路线图 {tag}',
-  'Just discovered {topic} and it\'s amazing! {tag}',
-  '{topic} is revolutionizing the industry {tag}',
-  'Sharing my thoughts on {topic} {tag}',
-  'New breakthrough in {topic} research {tag}',
-  '{topic} weekly roundup {tag}',
-];
-
-const relatedTagsPool = [
-  '#人工智能', '#机器学习', '#深度学习', '#自然语言处理', '#计算机视觉',
-  '#大语言模型', '#GPT', '#ChatGPT', '#AIGC', '#文生图',
-  '#数据分析', '#大数据', '#云计算', '#物联网', '#区块链',
-  '#元宇宙', '#VR', '#AR', '#机器人', '#自动驾驶',
-  '#Python', '#编程', '#技术分享', '#科技前沿', '#创新',
-  '#创业', '#投资', '#数字化转型', '#智能推荐', '#知识图谱',
-  '#MachineLearning', '#DeepLearning', '#NLP', '#ComputerVision',
-  '#LLM', '#GenerativeAI', '#DataScience', '#BigData',
-  '#CloudComputing', '#IoT', '#Robotics', '#SelfDriving',
-];
+const topicConfigs = {
+  '#AI技术': {
+    templates: [
+      '今天尝试了一下{topic}，真的太神奇了！{tag}',
+      '{topic}正在改变我们的生活方式，未来已来！{tag}',
+      '关于{topic}的几点思考，欢迎大家讨论 {tag}',
+      '刚刚发布了关于{topic}的最新研究成果 {tag}',
+      '{topic}行业周报：本周大事记 {tag}',
+      '入门{topic}看这篇就够了 {tag}',
+      '深度解析：{topic}的核心技术原理 {tag}',
+      '用{topic}做了一个小项目，效果出乎意料 {tag}',
+      '{topic}面试常考题汇总，收藏备用 {tag}',
+      '我为什么看好{topic}的发展前景 {tag}',
+      'Just discovered {topic} and it\'s amazing! {tag}',
+      '{topic} is revolutionizing the industry {tag}',
+    ],
+    tags: [
+      '#人工智能', '#机器学习', '#深度学习', '#自然语言处理', '#计算机视觉',
+      '#大语言模型', '#GPT', '#ChatGPT', '#AIGC', '#文生图',
+      '#Python', '#技术分享', '#科技前沿', '#创新',
+      '#MachineLearning', '#DeepLearning', '#NLP', '#ComputerVision',
+      '#LLM', '#GenerativeAI', '#DataScience',
+    ],
+  },
+  '#新能源汽车': {
+    templates: [
+      '{topic}又出新款了，颜值太高了吧 {tag}',
+      '今天试驾了{topic}，加速真的爽 {tag}',
+      '{topic}续航实测分享，结果出乎意料 {tag}',
+      '为什么越来越多人选择{topic}？ {tag}',
+      '{topic}充电体验大比拼 {tag}',
+      '深度分析：{topic}到底值不值得买 {tag}',
+      '{topic}技术突破，续航突破1000公里 {tag}',
+      '分享我的{topic}用车体验 {tag}',
+      '{topic}市场格局生变，谁能笑到最后 {tag}',
+      '入手{topic}一个月，谈谈真实感受 {tag}',
+      'EVs are the future and {topic} is leading {tag}',
+      'Test drove {topic} today, it was incredible {tag}',
+    ],
+    tags: [
+      '#电动车', '#特斯拉', '#比亚迪', '#蔚来', '#小鹏',
+      '#理想汽车', '#自动驾驶', '#智能汽车', '#充电网', '#续航焦虑',
+      '#新能源', '#碳中和', '#出行方式', '#科技改变生活',
+      '#Tesla', '#BYD', '#NIO', '#XPeng',
+      '#ElectricVehicle', '#EV', '#SustainableTransport',
+    ],
+  },
+  '#元宇宙': {
+    templates: [
+      '{topic}概念又火了，这次是真风口吗 {tag}',
+      '第一次体验{topic}，感觉打开了新世界 {tag}',
+      '{topic}到底是什么？一文讲清楚 {tag}',
+      '普通人怎么抓住{topic}的机会 {tag}',
+      '{topic}游戏真的太沉浸了 {tag}',
+      '深度解析{topic}的底层技术 {tag}',
+      '{topic}+教育，未来的学习方式 {tag}',
+      '我在{topic}里开了个店，结果... {tag}',
+      '{topic}是未来还是泡沫？聊聊我的看法 {tag}',
+      '盘点{topic}的几大应用场景 {tag}',
+      'The metaverse is coming and {topic} is at the forefront {tag}',
+      'Exploring {topic} and its possibilities {tag}',
+    ],
+    tags: [
+      '#VR', '#AR', '#虚拟现实', '#增强现实', '#数字孪生',
+      '#虚拟世界', '#区块链', '#NFT', '#Web3', '#去中心化',
+      '#游戏', '#社交', '#数字资产', '#未来科技',
+      '#VirtualReality', '#AugmentedReality', '#Web3', '#Metaverse',
+      '#NFTs', '#Blockchain', '#DigitalTwins',
+    ],
+  },
+};
 
 const platforms = ['weibo', 'twitter', 'zhihu', 'linkedin'];
 
@@ -51,17 +88,18 @@ let postIdCounter = 0;
 
 function generatePost(topic) {
   postIdCounter++;
+  const topicConfig = topicConfigs[topic] || topicConfigs[Object.keys(topicConfigs)[0]];
   const author = authors[Math.floor(Math.random() * authors.length)];
-  const template = contentTemplates[Math.floor(Math.random() * contentTemplates.length)];
+  const template = topicConfig.templates[Math.floor(Math.random() * topicConfig.templates.length)];
   const platform = platforms[Math.floor(Math.random() * platforms.length)];
 
   const numTags = Math.floor(Math.random() * 3) + 1;
-  const shuffledTags = [...relatedTagsPool].sort(() => 0.5 - Math.random());
+  const shuffledTags = [...topicConfig.tags].sort(() => 0.5 - Math.random());
   const selectedTags = shuffledTags.slice(0, numTags);
   const allTags = [topic, ...selectedTags];
 
   const tagStr = selectedTags.join(' ');
-  let content = template.replace('{topic}', topic).replace('{tag}', tagStr);
+  let content = template.replace(/{topic}/g, topic).replace('{tag}', tagStr);
 
   if (Math.random() > 0.5) {
     const extraTexts = [
@@ -93,6 +131,9 @@ class MockDataStream {
     this.isRunning = false;
     this.intervalId = null;
     this.postsPerSecond = config.simulation.postsPerSecond;
+    this.activeTopics = [config.topic];
+    this.topicWeights = {};
+    this.topicWeights[config.topic] = 1.0;
   }
 
   addListener(callback) {
@@ -107,6 +148,7 @@ class MockDataStream {
     if (this.isRunning) return;
     this.isRunning = true;
     console.log('[MockDataStream] 数据流已启动，每秒生成', this.postsPerSecond, '条帖子');
+    console.log('[MockDataStream] 活跃话题:', this.activeTopics.join(', '));
     this._tick();
   }
 
@@ -126,8 +168,10 @@ class MockDataStream {
     const count = burst ? Math.round(this.postsPerSecond * 3) : this.postsPerSecond;
 
     const posts = [];
+    const topics = this._getWeightedTopics();
     for (let i = 0; i < count; i++) {
-      posts.push(generatePost(config.topic));
+      const topic = topics[i % topics.length];
+      posts.push(generatePost(topic));
     }
 
     this.listeners.forEach(listener => {
@@ -148,16 +192,44 @@ class MockDataStream {
     this.intervalId = setTimeout(() => this._tick(), delay);
   }
 
+  _getWeightedTopics() {
+    const topics = [];
+    for (const topic of this.activeTopics) {
+      const weight = this.topicWeights[topic] || 1.0;
+      const count = Math.max(1, Math.round(weight * 10));
+      for (let i = 0; i < count; i++) {
+        topics.push(topic);
+      }
+    }
+    return topics;
+  }
+
   setPostsPerSecond(rate) {
     this.postsPerSecond = rate;
     console.log('[MockDataStream] 发帖速率已调整为:', rate, '帖/秒');
   }
 
-  generateBurst(count = 50) {
-    console.log('[MockDataStream] 生成突发流量:', count, '条');
+  setActiveTopics(topics) {
+    this.activeTopics = topics;
+    topics.forEach(t => {
+      if (!(t in this.topicWeights)) {
+        this.topicWeights[t] = 1.0;
+      }
+    });
+    console.log('[MockDataStream] 活跃话题已更新:', topics.join(', '));
+  }
+
+  setTopicWeight(topic, weight) {
+    this.topicWeights[topic] = weight;
+    console.log('[MockDataStream] 话题权重已更新:', topic, '=>', weight);
+  }
+
+  generateBurst(count = 50, topic = null) {
+    const targetTopic = topic || config.topic;
+    console.log('[MockDataStream] 生成突发流量:', count, '条，话题:', targetTopic);
     const posts = [];
     for (let i = 0; i < count; i++) {
-      posts.push(generatePost(config.topic));
+      posts.push(generatePost(targetTopic));
     }
     this.listeners.forEach(listener => {
       try {
@@ -174,6 +246,10 @@ class MockDataStream {
     });
     return posts.length;
   }
+
+  getAvailableTopics() {
+    return Object.keys(topicConfigs);
+  }
 }
 
 const mockDataStream = new MockDataStream();
@@ -181,4 +257,5 @@ const mockDataStream = new MockDataStream();
 module.exports = {
   mockDataStream,
   generatePost,
+  getAvailableTopics: () => Object.keys(topicConfigs),
 };

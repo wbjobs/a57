@@ -1,7 +1,20 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 
-function TagNetworkChart({ data }) {
+const colorPalettes = [
+  {
+    main: ['#3b82f6', '#8b5cf6'],
+    link: 'rgba(139, 92, 246, 0.3)',
+    stroke: '#fff',
+  },
+  {
+    main: ['#ff6b6b', '#ee5a24'],
+    link: 'rgba(255, 107, 107, 0.3)',
+    stroke: '#fff',
+  },
+];
+
+function TagNetworkChart({ data, colorScheme = 0 }) {
   const svgRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -21,9 +34,11 @@ function TagNetworkChart({ data }) {
     const nodes = data.nodes.map(d => ({ ...d }));
     const links = data.links.map(d => ({ ...d }));
 
+    const palette = colorPalettes[colorScheme] || colorPalettes[0];
+
     const colorScale = d3.scaleOrdinal()
       .domain([0, 1])
-      .range(['#3b82f6', '#8b5cf6']);
+      .range(palette.main);
 
     const maxValue = d3.max(nodes, d => d.value) || 1;
     const radiusScale = d3.scaleSqrt()
@@ -51,7 +66,7 @@ function TagNetworkChart({ data }) {
       .data(links)
       .enter()
       .append('line')
-      .attr('stroke', 'rgba(139, 92, 246, 0.3)')
+      .attr('stroke', palette.link)
       .attr('stroke-width', d => linkWidthScale(d.value))
       .attr('stroke-linecap', 'round');
 
@@ -168,7 +183,7 @@ function TagNetworkChart({ data }) {
       simulation.stop();
       tooltip.remove();
     };
-  }, [data]);
+  }, [data, colorScheme]);
 
   return (
     <div ref={containerRef} style={{ width: '100%', height: 350 }}>

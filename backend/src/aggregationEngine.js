@@ -1,7 +1,7 @@
 const config = require('./config');
 const es = require('./elasticsearch');
 const MessageQueue = require('./messageQueue');
-const SlidingWindowAggregator = require('./slidingWindowAggregator');
+const topicManager = require('./topicManager');
 
 class AggregationEngine {
   constructor() {
@@ -13,11 +13,6 @@ class AggregationEngine {
       batchSize: 500,
       maxQueueSize: 200000,
       processInterval: 20,
-    });
-
-    this.aggregator = new SlidingWindowAggregator({
-      windowHours: 24,
-      maxRecentPosts: 500,
     });
 
     this.esBatchQueue = [];
@@ -36,7 +31,7 @@ class AggregationEngine {
   start() {
     if (this.intervalId) return;
 
-    this.aggregator.start();
+    topicManager.start();
 
     this.messageQueue.addHandler(async (batch) => {
       await this._processBatch(batch);
@@ -47,7 +42,7 @@ class AggregationEngine {
 
     this.esBatchInterval = setInterval(() => this._flushEsBatch(), 5000);
 
-    console.log('[AggregationEngine] 高性能聚合引擎已启动 (消息队列 + 滑动窗口)');
+    console.log('[AggregationEngine] 高性能聚合引擎已启动 (消息队列 + 滑动窗口 + 话题管理)');
   }
 
   stop() {
@@ -60,7 +55,7 @@ class AggregationEngine {
       this.esBatchInterval = null;
     }
     this.messageQueue.stop();
-    this.aggregator.stop();
+    topicManager.stop();
     console.log('[AggregationEngine] 已停止');
   }
 
@@ -73,7 +68,7 @@ class AggregationEngine {
   }
 
   async _processBatch(posts) {
-    this.aggregator.addPostsBatch(posts);
+    topicManager.addPostsBatch(posts);
 
     if (es.isReady()) {
       this.esBatchQueue.push(...posts);
@@ -142,60 +137,62 @@ class AggregationEngine {
     });
   }
 
-  getRealtimeStats() {
-    const now = new Date();
-    const startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-
-    const hourlyStats = this.aggregator.getHourlyStats(startTime, now);
-    const topKeywords = this.aggregator.getTopKeywords(config.aggregation.topKeywords);
-    const relatedTags = this.aggregator.getRelatedTags(config.topic, config.aggregation.topRelatedTags);
-    const tagNetwork = this.aggregator.getTagNetwork(config.topic, config.aggregation.topRelatedTags);
-    const recentPosts = this.aggregator.getRecentPosts(20);
-    const totalCount = this.aggregator.getTotalCount();
-
-    const currentHourCount = this.aggregator.getCurrentHourCount();
-    const lastHourCount = this.aggregator.getLastHourCount();
-
-    const growthRate = lastHourCount > 0
-      ? ((currentHourCount - lastHourCount) / lastHourCount * 100).toFixed(1)
-      : currentHourCount > 0 ? 100 : 0;
-
+  getRealtimeStats(topic) {
+    const targetTopic = topic || config.topic;
+    const stats = topicManager.getStats(targetTopic);
     const queueStats = this.messageQueue.getStats();
-    const aggregatorStats = this.aggregator.getStats();
 
     return {
-      topic: config.topic,
-      timestamp: now.toISOString(),
-      totalCount,
-      currentHourCount,
-      lastHourCount,
-      growthRate: parseFloat(growthRate),
-      hourlyStats,
-      topKeywords,
-      relatedTags,
-      tagNetwork,
-      recentPosts,
-      postsPerMinute: Math.round(currentHourCount / 60),
+      ...stats,
       performance: {
         queueSize: queueStats.currentQueueSize,
         queueDropped: queueStats.dropped,
         queuePeak: queueStats.peakQueueSize,
         processed: queueStats.processed,
-        aggregatorStats,
+        activeTopics: topicManager.getAllTopics().length,
       },
     };
   }
 
-  async getHistoricalStats(startTime, endTime) {
+  getAllStats() {
+    const allStats = topicManager.getAllStats();
+    const queueStats = this.messageQueue.getStats();
+
+    return {
+      topics: allStats,
+      performance: {
+        queueSize: queueStats.currentQueueSize,
+        queueDropped: queueStats.dropped,
+        queuePeak: queueStats.peakQueueSize,
+        processed: queueStats.processed,
+        activeTopics: topicManager.getAllTopics().length,
+      },
+    };
+  }
+
+  getPrediction(topic) {
+    return topicManager.getPrediction(topic || config.topic);
+  }
+
+  compareTopics(topic1, topic2) {
+    return topicManager.compareTopics(topic1, topic2);
+  }
+
+  getAvailableTopics() {
+    return topicManager.getAllTopics();
+  }
+
+  async getHistoricalStats(startTime, endTime, topic) {
+    const targetTopic = topic || config.topic;
     const start = new Date(startTime);
     const end = new Date(endTime);
 
     if (es.isReady()) {
       try {
         const [hourlyStats, topKeywords, relatedTags] = await Promise.all([
-          es.getHourlyStats(start, end, config.topic),
-          es.getTopKeywords(start, end, config.topic, config.aggregation.topKeywords),
-          es.getRelatedTags(start, end, config.topic, config.aggregation.topRelatedTags),
+          es.getHourlyStats(start, end, targetTopic),
+          es.getTopKeywords(start, end, targetTopic, config.aggregation.topKeywords),
+          es.getRelatedTags(start, end, targetTopic, config.aggregation.topRelatedTags),
         ]);
 
         if (hourlyStats && topKeywords && relatedTags) {
@@ -207,16 +204,11 @@ class AggregationEngine {
           };
         }
       } catch (error) {
-        console.warn('[AggregationEngine] ES查询失败，回退到内存数据:', error.message);
+        console.error('[AggregationEngine] ES查询失败，降级到内存聚合:', error.message);
       }
     }
 
-    return {
-      hourlyStats: this.aggregator.getHourlyStats(start, end),
-      topKeywords: this.aggregator.getTopKeywords(config.aggregation.topKeywords),
-      relatedTags: this.aggregator.getRelatedTags(config.topic, config.aggregation.topRelatedTags),
-      source: 'memory',
-    };
+    return null;
   }
 }
 
