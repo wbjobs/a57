@@ -123,20 +123,28 @@ class MockDataStream {
     if (!this.isRunning) return;
 
     const burst = config.simulation.enableRandomBurst && Math.random() > 0.9;
-    const count = burst ? this.postsPerSecond * 3 : this.postsPerSecond;
+    const count = burst ? Math.round(this.postsPerSecond * 3) : this.postsPerSecond;
 
+    const posts = [];
     for (let i = 0; i < count; i++) {
-      const post = generatePost(config.topic);
-      this.listeners.forEach(listener => {
-        try {
-          listener(post);
-        } catch (error) {
-          console.error('[MockDataStream] 监听器处理失败:', error.message);
-        }
-      });
+      posts.push(generatePost(config.topic));
     }
 
-    const delay = 1000 / this.postsPerSecond;
+    this.listeners.forEach(listener => {
+      try {
+        if (typeof listener === 'function') {
+          posts.forEach(post => listener(post));
+        } else if (listener.onPostsBatch) {
+          listener.onPostsBatch(posts);
+        } else if (listener.onPost) {
+          posts.forEach(post => listener.onPost(post));
+        }
+      } catch (error) {
+        console.error('[MockDataStream] 监听器处理失败:', error.message);
+      }
+    });
+
+    const delay = 1000;
     this.intervalId = setTimeout(() => this._tick(), delay);
   }
 
@@ -147,16 +155,24 @@ class MockDataStream {
 
   generateBurst(count = 50) {
     console.log('[MockDataStream] 生成突发流量:', count, '条');
+    const posts = [];
     for (let i = 0; i < count; i++) {
-      const post = generatePost(config.topic);
-      this.listeners.forEach(listener => {
-        try {
-          listener(post);
-        } catch (error) {
-          console.error('[MockDataStream] 监听器处理失败:', error.message);
-        }
-      });
+      posts.push(generatePost(config.topic));
     }
+    this.listeners.forEach(listener => {
+      try {
+        if (typeof listener === 'function') {
+          posts.forEach(post => listener(post));
+        } else if (listener.onPostsBatch) {
+          listener.onPostsBatch(posts);
+        } else if (listener.onPost) {
+          posts.forEach(post => listener.onPost(post));
+        }
+      } catch (error) {
+        console.error('[MockDataStream] 监听器处理失败:', error.message);
+      }
+    });
+    return posts.length;
   }
 }
 

@@ -53,9 +53,15 @@ app.get('/api/stats/historical', async (req, res) => {
 
 app.get('/api/posts/recent', (req, res) => {
   const limit = parseInt(req.query.limit) || 20;
-  const memoryStore = require('./memoryStore');
-  const posts = memoryStore.getRecentPosts(limit);
-  res.json({ posts });
+  const stats = aggregationEngine.getRealtimeStats();
+  res.json({ posts: stats.recentPosts || [] });
+});
+
+app.get('/api/performance', (req, res) => {
+  const stats = aggregationEngine.getRealtimeStats();
+  res.json({
+    performance: stats.performance || {},
+  });
 });
 
 app.post('/api/simulation/start', (req, res) => {
@@ -117,9 +123,12 @@ async function start() {
   aggregationEngine.addListener(wsListener);
   aggregationEngine.start();
 
-  mockDataStream.addListener((post) => {
-    aggregationEngine.processPost(post);
-  });
+  const mockListener = {
+    onPostsBatch: (posts) => {
+      aggregationEngine.ingestPosts(posts);
+    },
+  };
+  mockDataStream.addListener(mockListener);
 
   mockDataStream.start();
 

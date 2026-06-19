@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import * as echarts from 'echarts';
 import 'echarts-wordcloud';
 
-function WordCloudChart({ data }) {
+function WordCloudChart({ data, topN = 50, shape = 'circle' }) {
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
 
@@ -25,7 +25,7 @@ function WordCloudChart({ data }) {
   useEffect(() => {
     if (!chartInstance.current || !data || data.length === 0) return;
 
-    const wordData = data.map(item => ({
+    const displayData = data.slice(0, topN).map(item => ({
       name: item.word,
       value: item.count || item.score || 10,
     }));
@@ -34,6 +34,7 @@ function WordCloudChart({ data }) {
       '#60a5fa', '#818cf8', '#a78bfa', '#c084fc', '#e879f9',
       '#f472b6', '#fb7185', '#f97316', '#fbbf24', '#34d399',
       '#22d3ee', '#38bdf8', '#6366f1', '#ec4899', '#f59e0b',
+      '#a3e635', '#34d399', '#2dd4bf', '#22d3ee', '#38bdf8',
     ];
 
     const option = {
@@ -55,17 +56,18 @@ function WordCloudChart({ data }) {
       series: [
         {
           type: 'wordCloud',
-          shape: 'circle',
+          shape: shape,
           left: 'center',
           top: 'center',
-          width: '90%',
+          width: '95%',
           height: '90%',
-          sizeRange: [14, 50],
-          rotationRange: [-45, 45],
+          sizeRange: [12, Math.min(48, 12 + topN * 0.6)],
+          rotationRange: [-30, 30],
           rotationStep: 15,
-          gridSize: 8,
+          gridSize: Math.max(6, Math.min(12, 15 - topN * 0.1)),
           drawOutOfBound: false,
           layoutAnimation: true,
+          shrinkToFit: true,
           textStyle: {
             fontFamily: 'sans-serif',
             fontWeight: 'bold',
@@ -80,13 +82,13 @@ function WordCloudChart({ data }) {
               textShadowColor: 'rgba(96, 165, 250, 0.8)',
             },
           },
-          data: wordData,
+          data: displayData,
         },
       ],
     };
 
-    chartInstance.current.setOption(option);
-  }, [data]);
+    chartInstance.current.setOption(option, true);
+  }, [data, topN, shape]);
 
   return <div ref={chartRef} className="chart-container" />;
 }

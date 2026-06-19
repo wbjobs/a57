@@ -9,6 +9,10 @@ function App() {
   const [stats, setStats] = useState(null);
   const [recentPosts, setRecentPosts] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [wordCloudTopN, setWordCloudTopN] = useState(50);
+  const [wordCloudShape, setWordCloudShape] = useState('circle');
+  const [tagNetworkTopN, setTagNetworkTopN] = useState(30);
+  const [tagListTopN, setTagListTopN] = useState(15);
 
   useEffect(() => {
     fetch('/api/stats/realtime')
@@ -60,6 +64,17 @@ function App() {
 
   const maxTagCount = stats?.relatedTags?.[0]?.count || 1;
 
+  const tagNetworkData = stats?.tagNetwork
+    ? {
+        nodes: stats.tagNetwork.nodes.slice(0, tagNetworkTopN + 1),
+        links: stats.tagNetwork.links.filter(
+          link => link.source === stats.topic ||
+            (stats.tagNetwork.nodes.findIndex(n => n.id === link.source) < tagNetworkTopN + 1 &&
+             stats.tagNetwork.nodes.findIndex(n => n.id === link.target) < tagNetworkTopN + 1)
+        ),
+      }
+    : null;
+
   return (
     <div className="app">
       <header className="header">
@@ -73,6 +88,12 @@ function App() {
           {'  '}
           {stats?.topic || '#AI技术'}
         </div>
+        {stats?.performance && (
+          <div className="perf-info">
+            <span className="perf-item">队列: {stats.performance.queueSize}</span>
+            <span className="perf-item">已处理: {stats.performance.processed?.toLocaleString()}</span>
+          </div>
+        )}
       </header>
 
       <div className="stats-grid">
@@ -97,25 +118,100 @@ function App() {
 
       <div className="charts-grid">
         <div className="chart-card">
-          <h3>📈 24小时发帖趋势</h3>
+          <div className="chart-header">
+            <h3>📈 24小时发帖趋势</h3>
+          </div>
           <TrendChart data={stats?.hourlyStats} />
         </div>
         <div className="chart-card">
-          <h3>☁️ 高频词云</h3>
-          <WordCloudChart data={stats?.topKeywords} />
+          <div className="chart-header">
+            <h3>☁️ 高频词云</h3>
+            <div className="chart-controls">
+              <label className="control-label">
+                Top N:
+                <select
+                  value={wordCloudTopN}
+                  onChange={e => setWordCloudTopN(Number(e.target.value))}
+                  className="control-select"
+                >
+                  <option value={20}>20</option>
+                  <option value={30}>30</option>
+                  <option value={50}>50</option>
+                  <option value={80}>80</option>
+                  <option value={100}>100</option>
+                </select>
+              </label>
+              <label className="control-label">
+                形状:
+                <select
+                  value={wordCloudShape}
+                  onChange={e => setWordCloudShape(e.target.value)}
+                  className="control-select"
+                >
+                  <option value="circle">圆形</option>
+                  <option value="cardioid">心形</option>
+                  <option value="diamond">菱形</option>
+                  <option value="triangle">三角形</option>
+                  <option value="pentagon">五边形</option>
+                  <option value="star">星形</option>
+                </select>
+              </label>
+            </div>
+          </div>
+          <WordCloudChart
+            data={stats?.topKeywords}
+            topN={wordCloudTopN}
+            shape={wordCloudShape}
+          />
         </div>
       </div>
 
       <div className="bottom-section">
         <div className="chart-card">
-          <h3>🕸️ 关联标签网络图</h3>
-          <TagNetworkChart data={stats?.tagNetwork} />
+          <div className="chart-header">
+            <h3>🕸️ 关联标签网络图</h3>
+            <div className="chart-controls">
+              <label className="control-label">
+                显示数量:
+                <select
+                  value={tagNetworkTopN}
+                  onChange={e => setTagNetworkTopN(Number(e.target.value))}
+                  className="control-select"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={30}>30</option>
+                  <option value={50}>50</option>
+                </select>
+              </label>
+            </div>
+          </div>
+          <TagNetworkChart data={tagNetworkData} />
         </div>
         <div className="chart-card">
-          <h3>🏷️ 热门关联标签</h3>
+          <div className="chart-header">
+            <h3>🏷️ 热门关联标签</h3>
+            <div className="chart-controls">
+              <label className="control-label">
+                Top N:
+                <select
+                  value={tagListTopN}
+                  onChange={e => setTagListTopN(Number(e.target.value))}
+                  className="control-select"
+                >
+                  <option value={10}>10</option>
+                  <option value={15}>15</option>
+                  <option value={20}>20</option>
+                  <option value={30}>30</option>
+                  <option value={50}>50</option>
+                </select>
+              </label>
+            </div>
+          </div>
           <div className="related-tags-list" style={{ maxHeight: 350, overflowY: 'auto' }}>
-            {stats?.relatedTags?.slice(0, 15).map((item, index) => (
+            {stats?.relatedTags?.slice(0, tagListTopN).map((item, index) => (
               <div key={item.tag} className="related-tag-item">
+                <span className="tag-rank">{index + 1}</span>
                 <span className="tag-name">{item.tag}</span>
                 <div className="bar-container">
                   <div
